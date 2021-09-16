@@ -43,3 +43,4 @@ class ScanOpt:
             os.path.expanduser(os.path.join("~", "config/project/antisiteQubit/{}/"
                                                  "my_launchpad.yaml".format(scan_opt.category))))
         LPAD.add_wf(wf)
+X

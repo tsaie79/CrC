@@ -10,21 +10,32 @@ from atomate.vasp.powerups import (
     add_tags
 )
 
-from pymatgen import Structure
+from pymatgen.io.vasp.inputs import Structure
 
 import os
 
 from fireworks import LaunchPad
 
+# from qubitPack.tool_box import get_db
+
 class ScanOpt:
     def __init__(self):
-        self.st_from_dir = "../structures/Cr23C6_mp-723_primitive.cif"
+
+        self.st_from_dir = "structures/c2cr3.vasp"
         self.st = Structure.from_file(self.st_from_dir)
+
+        # db = get_db("CrC", "test_set", port=12347)
+        # st = db.collection.find_one({"task_id": 9})["output"]["structure"]
+        # self.st = Structure.from_dict(st)
         self.category = None
 
     def test_set(self):
-        self.category = "test_set"
-        wf = get_wf(self.st, "metagga_optimization.yaml")
+        self.category = "scan"
+        wf = get_wf(self.st, os.path.join(os.path.dirname(os.path.abspath("__file__")),
+                                          "wf/metagga_optimization.yaml"))
+        wf = add_modify_incar(wf, dict(incar_update={"EDIFFG": -0.04}), fw_name_constraint=wf.fws[0].name)
+        wf = add_modify_incar(wf, dict(incar_update={"EDIFFG": -0.01}), fw_name_constraint=wf.fws[1].name)
+        wf = add_modify_incar(wf, dict(incar_update={"LAECHG": False, "LELF": False, "ISPIN": 2, "METAGGA": "SCAN"}))
         wf = add_modify_incar(wf)
         wf = set_queue_options(wf, "24:00:00")
         wf = preserve_fworker(wf)
@@ -40,9 +51,10 @@ class ScanOpt:
         scan_opt = cls()
         wf = scan_opt.test_set()
         LPAD = LaunchPad.from_file(
-            os.path.expanduser(os.path.join("~", "config/project/antisiteQubit/{}/"
+            os.path.expanduser(os.path.join("~", "config/project/CrC/{}/"
                                                  "my_launchpad.yaml".format(scan_opt.category))))
         LPAD.add_wf(wf)
 
 if __name__ == '__main__':
+    print(os.getcwd())
     ScanOpt.run()
